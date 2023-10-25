@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MessageBoardApi.Models;
+using Microsoft.AspNetCore.Authorization;
 // using MessageBoardApi.Migrations;
 
 namespace MessageBoardApi.Controllers;
@@ -40,9 +41,28 @@ public class GroupsController : ControllerBase
     {
       return NotFound();
     }
-
     return thisGroup;
   }
 
+  [HttpGet("{id}/messages/{messageId}")]
+  public async Task<ActionResult<IEnumerable<Message>>> GetMessage(int id, int messageId)
+  {
+    IQueryable<Message> query = _db.Messages.Where(m => m.GroupId == id)
+                                            .Where(m => m.MessageId == messageId)
+                                            .AsQueryable();
 
+    return await query.ToListAsync();
+  }
+
+  [HttpPost("{id}/messages")]
+  [Authorize]
+  public async Task<ActionResult<Message>> PostMessage(int id, Message message)
+  {
+    message.GroupId = id;
+    message.UserId = User.Claims.Where(u => u.Type == "userId").FirstOrDefault().Value;
+    message.Date = DateTime.Now;
+    _db.Messages.Add(message);
+    await _db.SaveChangesAsync();
+    return CreatedAtAction(nameof(GetMessage), new { id = id, messageId = message.MessageId }, message);
+  }
 }
