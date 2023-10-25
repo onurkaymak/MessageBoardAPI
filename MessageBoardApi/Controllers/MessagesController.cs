@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MessageBoardApi.Models;
-// using MessageBoardApi.Migrations;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace MessageBoardApi.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/[controller]")]
+[Authorize]
 public class MessagesController : ControllerBase
 {
   private readonly MessageBoardApiContext _db;
@@ -48,7 +50,11 @@ public class MessagesController : ControllerBase
   [HttpGet("{id}")]
   public async Task<ActionResult<Message>> GetMessage(int id)
   {
+    string userId = User.Claims.Where(entry => entry.Type == "UserId").FirstOrDefault().Value;
+    // ApplicationUser currentUser = await _userManager.FindByIdAsync(userId);
+
     Message message = await _db.Messages
+                                        .Where(entry => entry.User.Id == userId)
                                         // .Include(message => message.Group)
                                         .Include(message => message.User)
                                         .FirstOrDefaultAsync(message => message.MessageId == id);
@@ -108,7 +114,7 @@ public class MessagesController : ControllerBase
 
   private bool IsAuthor(int id, string user_name)
   { // does ANY message exist with BOTH this ID ~AND~ this User?
-    return _db.Messages.Any(e => e.MessageId == id && e.User.Name == user_name);
+    return _db.Messages.Any(e => e.MessageId == id && e.User.UserName == user_name);
   }
 
   // DELETE: api/messages/{id}
