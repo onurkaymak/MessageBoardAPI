@@ -4,8 +4,8 @@ namespace MessageBoardApi.Models
   {
     public int GroupUserId { get; set; }
     public int GroupId { get; set; }
-    public int UserId { get; set; }
+    public string UserId { get; set; } // user id
     public Group Group { get; set; } // reference navigation property
-    public User User { get; set; } // reference navigation property
+    public ApplicationUser User { get; set; } // reference navigation property
   }
 }
